@@ -17,9 +17,11 @@ services:
       - --api.insecure=true
       - --providers.docker
       - --providers.docker.exposedbydefault=false
+      - --providers.docker.defaultRule=Host(`{{ index .Labels "com.docker.compose.service" }}.${DOMAIN}`)
+      - --entrypoints.http.address=:80
     ports:
-      - "5000:80"   # HTTP port
-      - "5001:8080" # Web UI (enabled by --api.insecure=true)
+      - "80:80"      # HTTP port
+      - "59000:8080" # Web UI (enabled by --api.insecure=true)
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -33,23 +35,20 @@ services:
     build: "./web-server"
     image: "nginx:alpine"
     container_name: "web-server"
-    ports:
-      - "80:80"
     restart: unless-stopped
     networks:
       - app
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.web-server.rule=Path(`/`)"
       - "traefik.docker.network=app"
+      - "traefik.http.routers.web-server.rule=Path(`/`)"
+      - "traefik.http.routers.web-server.entrypoints=http"
 
   # Dashboards for monitoring metric analytics
   grafana:
     build: "./grafana"
     image: "grafana/grafana-arm32v7-linux"
     container_name: "grafana"
-    ports:
-      - "9000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
@@ -60,27 +59,31 @@ services:
       - mon
     depends_on:
       - prometheus
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mon"
+      - "traefik.http.routers.grafana.entrypoints=http"
 
   # Monitoring system and time series database
   prometheus:
     build: "./prometheus"
     image: "prom/prometheus"
     container_name: "prometheus"
-    ports:
-      - "9001:9090"
     restart: unless-stopped
     networks:
       - mon
     depends_on:
       - node-exporter
       - cadvisor
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mon"
+      - "traefik.http.routers.prometheus.entrypoints=http"
 
   # Exporter for machine metrics
   node-exporter:
     image: "prom/node-exporter"
     container_name: "node-exporter"
-    ports:
-      - "9002:9100"
     #network_mode: "host" # For real network monitoring
     pid: "host"
     volumes:
@@ -91,13 +94,15 @@ services:
     restart: unless-stopped
     networks:
       - mon
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mon"
+      - "traefik.http.routers.node-exporter.entrypoints=http"
 
   # Analyzes resource usage and performance characteristics of running containers
   cadvisor:
     image: "budry/cadvisor-arm"
     container_name: "cadvisor"
-    ports:
-      - "9003:8080"
     volumes:
       - "/:/rootfs:ro"
       - "/var/run:/var/run:ro"
@@ -111,3 +116,7 @@ services:
     restart: unless-stopped
     networks:
       - mon
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mon"
+      - "traefik.http.routers.cadvisor.entrypoints=http"
