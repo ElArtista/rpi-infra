@@ -15,14 +15,13 @@ services:
     container_name: "reverse-proxy"
     command:
       - --global.sendAnonymousUsage=false
-      - --api.insecure=true
+      - --api.dashboard=true
       - --providers.docker
       - --providers.docker.exposedbydefault=false
       - --providers.docker.defaultRule=Host(`{{ index .Labels "com.docker.compose.service" }}.${DOMAIN}`)
       - --entrypoints.http.address=:80
     ports:
       - "80:80"      # HTTP port
-      - "59000:8080" # Web UI (enabled by --api.insecure=true)
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -30,6 +29,11 @@ services:
       - web
       - app
       - mon
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.entrypoints=http"
 
   # Demo web server
   web-server:
