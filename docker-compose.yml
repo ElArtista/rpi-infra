@@ -22,14 +22,25 @@ services:
       - --providers.docker
       - --providers.docker.exposedbydefault=false
       - --providers.docker.defaultRule=Host(`{{ index .Labels "com.docker.compose.service" }}.${DOMAIN}`)
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=duckdns
+      - --certificatesresolvers.letsencrypt.acme.email=${DUCKDNS_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/etc/acme.json
       - --entrypoints.http.address=:80
       - --entrypoints.http-pub.address=:8080
+      - --entrypoints.http-pub.http.tls=true
+      - --entrypoints.http-pub.http.tls.certresolver=letsencrypt
+      - --entrypoints.http-pub.http.tls.domains[0].main=${DOMAIN_PUBLIC}
+      - --entrypoints.http-pub.http.tls.domains[0].sans=*.${DOMAIN_PUBLIC}
     ports:
       - "80:80"     # HTTP internal port
       - "8080:8080" # HTTP public port
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/acme.json:/etc/acme.json
+    environment:
+      - DUCKDNS_TOKEN=${DUCKDNS_TOKEN}
     networks:
       - web
       - app
