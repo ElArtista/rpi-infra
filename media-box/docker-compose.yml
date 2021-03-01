@@ -1,0 +1,119 @@
+version: "3.8"
+
+networks:
+  app:
+    external:
+      name: app
+
+services:
+  deluge:
+    container_name: deluge
+    image: linuxserver/deluge:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${ROOT}/downloads:/downloads
+      - ${ROOT}/config/deluge:/config
+    restart: unless-stopped
+    networks:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app"
+      - "traefik.http.routers.deluge.entrypoints=http"
+
+  jackett:
+    container_name: jackett
+    image: linuxserver/jackett:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/downloads/torrent-blackhole:/downloads
+      - ${ROOT}/config/jackett:/config
+    restart: unless-stopped
+    networks:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app"
+      - "traefik.http.routers.jackett.entrypoints=http"
+
+  sonarr:
+    container_name: sonarr
+    image: linuxserver/sonarr:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/config/sonarr:/config
+      - ${ROOT}/series:/tv
+      - ${ROOT}/downloads:/downloads
+    restart: unless-stopped
+    networks:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app"
+      - "traefik.http.routers.sonarr.entrypoints=http"
+
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/config/radarr:/config
+      - ${ROOT}/movies:/movies
+      - ${ROOT}/downloads:/downloads
+    restart: unless-stopped
+    networks:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app"
+      - "traefik.http.routers.radarr.entrypoints=http"
+
+  bazarr:
+    container_name: bazarr
+    image: linuxserver/bazarr:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    volumes:
+      - ${ROOT}/config/bazarr:/config
+      - ${ROOT}/movies:/movies
+      - ${ROOT}/series:/tv
+    restart: unless-stopped
+    networks:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app"
+      - "traefik.http.routers.bazarr.entrypoints=http"
+
+  plex:
+    container_name: plex
+    image: linuxserver/plex:bionic
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - VERSION=docker
+      - UMASK_SET=022
+    volumes:
+      - ${ROOT}/config/plex:/config
+      - ${ROOT}/movies:/movies
+      - ${ROOT}/series:/tv
+    network_mode: host
+    restart: unless-stopped
