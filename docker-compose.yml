@@ -54,7 +54,7 @@ services:
   # Demo web server
   web-server:
     build: "./web-server"
-    image: "nginx:alpine"
+    image: "web-server"
     container_name: "web-server"
     restart: unless-stopped
     networks:
