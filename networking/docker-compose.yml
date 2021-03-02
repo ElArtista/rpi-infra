@@ -1,0 +1,40 @@
+version: "3.8"
+
+networks:
+  app:
+    external:
+      name: app
+
+services:
+  # Manages Wireguard configuration
+  wg-manager:
+    image: vx3r/wg-gen-web:latest
+    container_name: "wg-manager"
+    environment:
+      - "WG_CONF_DIR=/data"
+    volumes:
+      - "/etc/wireguard:/data"
+    restart: unless-stopped
+    networks:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app"
+      - "traefik.http.routers.wg-manager.entrypoints=http"
+      - "traefik.http.routers.wg-manager.middlewares=wg-auth"
+      - "traefik.http.middlewares.wg-auth.basicauth.users=${WG_BAUTH_USER}:${WG_BAUTH_PASS}"
+      - "traefik.http.middlewares.wg-auth.basicauth.removeheader=true"
+
+  # Provides TCP tunnel over WebSockets
+  wstun:
+    image: jpillora/chisel
+    container_name: "wstun"
+    command: "server -v -p 9312 --reverse --socks5 --key ${WS_TUNNEL_KEY}"
+    restart: unless-stopped
+    networks:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app"
+      - "traefik.http.services.wstun.loadbalancer.server.port=9312"
+      - "traefik.http.routers.wstun.entrypoints=http-pub"
