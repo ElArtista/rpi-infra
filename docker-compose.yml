@@ -21,7 +21,7 @@ services:
       - --api.dashboard=true
       - --providers.docker
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.defaultRule=Host(`{{ index .Labels "com.docker.compose.service" }}.${DOMAIN}`)
+      - --providers.docker.defaultRule=HostRegexp(`{{ index .Labels "com.docker.compose.service" }}.{domain:.+}`)
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=duckdns
       - --certificatesresolvers.letsencrypt.acme.email=${DUCKDNS_EMAIL}
@@ -48,7 +48,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.rule=HostRegexp(`traefik.{domain:.+}`)"
       - "traefik.http.routers.traefik.entrypoints=http"
 
   # Demo web server
