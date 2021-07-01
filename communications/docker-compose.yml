@@ -1,0 +1,22 @@
+version: "3.8"
+
+networks:
+  app:
+    external:
+      name: app
+
+services:
+  asterisk:
+    build:
+      context: ./asterisk
+      args:
+        - HOST
+    image: asterisk
+    container_name: asterisk
+    ports:
+      - "5060:5060/udp"               # SIP UDP port
+      - "10000-10019:10000-10019/udp" # RTP ports
+    networks:
+      - app
+    #network_mode: host
+    restart: unless-stopped
