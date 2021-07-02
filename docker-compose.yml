@@ -1,8 +1,5 @@
 version: "3.8"
 
-volumes:
-  portainer:
-
 networks:
   web:
     name: web
@@ -64,18 +61,3 @@ services:
       - "traefik.docker.network=app"
       - "traefik.http.routers.web-server.rule=Path(`/`)"
       - "traefik.http.routers.web-server.entrypoints=http"
-
-  # Container management
-  portainer:
-    image: portainer/portainer:alpine
-    container_name: "portainer"
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer:/data
-    networks:
-      - mon
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=mon"
-      - "traefik.http.routers.portainer.entrypoints=http"
